@@ -37,7 +37,7 @@ app/
 ### 1. Клонировать и настроить
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/PaulSssar/PaymentService
 cd PaymentService
 cp .env.example .env  # если есть
 ```
