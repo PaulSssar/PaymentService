@@ -49,9 +49,9 @@ docker-compose up --build
 ```
 
 Поднимутся 4 сервиса:
-- **postgres** — `localhost:5432`
-- **rabbitmq** — `localhost:5672` (UI: `localhost:15672`, guest/guest)
-- **api** — `localhost:8000`
+- **postgres** — `localhost:5432` (настраивается через `POSTGRES_PORT`)
+- **rabbitmq** — `localhost:5672` (UI: `localhost:15672`, guest/guest, настраивается через `RABBITMQ_PORT`/`RABBITMQ_MGMT_PORT`)
+- **api** — `localhost:8000` (настраивается через `API_PORT`)
 - **consumer** — воркер обработки
 - **outbox-publisher** — воркер публикации outbox
 
@@ -87,7 +87,7 @@ curl -X POST http://localhost:8000/api/v1/payments \
   "amount": 100.50,
   "currency": "RUB",
   "description": "Оплата заказа #42",
-  "metadata": null,
+  "extra_data": null,
   "status": "pending",
   "idempotency_key": "unique-key-123",
   "webhook_url": "https://example.com/webhooks/payment",
@@ -174,10 +174,20 @@ python -m app.workers.outbox_publisher
 | Переменная | Описание | По умолчанию |
 |---|---|---|
 | `API_KEY` | API ключ для валидации | *(required)* |
-| `DATABASE_URL` | PostgreSQL async URL | *(required)* |
-| `RABBITMQ_URL` | RabbitMQ URL | `amqp://guest:guest@localhost:5672/` |
+| `POSTGRES_USER` | Имя пользователя PostgreSQL | `payment_user` |
+| `POSTGRES_PASSWORD` | Пароль PostgreSQL | `payment_pass` |
+| `POSTGRES_DB` | Имя БД PostgreSQL | `payment_db` |
+| `POSTGRES_HOST` | Хост PostgreSQL (внутри Docker: `postgres`) | `localhost` |
+| `POSTGRES_PORT` | Порт postgres на хосте | `5432` |
+| `RABBITMQ_DEFAULT_USER` | Имя пользователя RabbitMQ | `guest` |
+| `RABBITMQ_DEFAULT_PASS` | Пароль RabbitMQ | `guest` |
+| `RABBITMQ_HOST` | Хост RabbitMQ (внутри Docker: `rabbitmq`) | `localhost` |
+| `RABBITMQ_PORT` | Порт rabbitmq на хосте | `5672` |
+| `RABBITMQ_MGMT_PORT` | Порт rabbitmq management UI | `15672` |
+| `API_PORT` | Порт API на хосте | `8000` |
+| `DEBUG` | Режим отладки | `false` |
+| `LOG_LEVEL` | Уровень логирования | `INFO` |
 | `WEBHOOK_TIMEOUT` | Таймаут webhook (сек) | `10` |
 | `WEBHOOK_MAX_RETRIES` | Макс. попыток webhook | `3` |
 | `OUTBOX_POLL_INTERVAL` | Интервал опроса outbox (сек) | `2.0` |
 | `OUTBOX_BATCH_SIZE` | Размер батча outbox | `50` |
-| `LOG_LEVEL` | Уровень логирования | `INFO` |

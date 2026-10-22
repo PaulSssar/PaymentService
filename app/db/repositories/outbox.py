@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -6,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.db.models import OutboxModel, OutboxStatus
+
+logger = logging.getLogger(__name__)
 
 
 class OutboxRepository:
@@ -39,7 +42,9 @@ class OutboxRepository:
             .with_for_update(skip_locked=True)
         )
         result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+        records = list(result.scalars().all())
+        logger.debug("Fetched %d pending outbox records", len(records))
+        return records
 
     async def mark_published(self, outbox_ids: list[UUID]) -> int:
         """Помечает outbox-записи как published."""
@@ -56,4 +61,5 @@ class OutboxRepository:
         )
         result = await self.session.execute(stmt)
         await self.session.flush()
+        logger.info("Marked %d outbox records as published", result.rowcount)
         return result.rowcount

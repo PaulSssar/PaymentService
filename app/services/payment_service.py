@@ -3,6 +3,7 @@
 Создаёт Payment и Outbox-запись в одной транзакции.
 """
 
+import logging
 from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +12,8 @@ from app.db.models import Currency, OutboxStatus, PaymentStatus, OutboxModel, Pa
 from app.db.repositories.outbox import OutboxRepository
 from app.db.repositories.payment import PaymentRepository
 from app.schemas.payment import PaymentCreate
+
+logger = logging.getLogger(__name__)
 
 
 class PaymentService:
@@ -22,15 +25,14 @@ class PaymentService:
         self.outbox_repo = OutboxRepository(session)
 
     async def create_payment(self, data: PaymentCreate, idempotency_key: str) -> PaymentModel:
-        """
-        Создаёт платёж с идемпотентностью.
-        1. Проверяет наличие записи по idempotency_key.
-        2. Если найдена — возвращает существующую.
-        3. Иначе создаёт Payment + Outbox в одной транзакции.
-        """
+        """Создаёт платёж с идемпотентностью."""
         # Проверяем идемпотентность
         existing = await self.payment_repo.get_by_idempotency_key(idempotency_key)
         if existing:
+            logger.info(
+                "Idempotency key matched, returning existing payment, id=%s",
+                existing.id,
+            )
             return existing
 
         # Создаём Payment
@@ -39,12 +41,16 @@ class PaymentService:
             amount=data.amount,
             currency=Currency(data.currency),
             description=data.description,
-            metadata=data.metadata,
+            extra_data=data.extra_data,
             idempotency_key=idempotency_key,
             webhook_url=data.webhook_url,
             status=PaymentStatus.PENDING,
         )
         payment = await self.payment_repo.create(payment)
+        logger.info(
+            "Payment created, id=%s, amount=%s, currency=%s",
+            payment.id, payment.amount, payment.currency,
+        )
 
         # Создаём Outbox-запись
         outbox = OutboxModel(
@@ -59,5 +65,6 @@ class PaymentService:
             status=OutboxStatus.PENDING,
         )
         await self.outbox_repo.create(outbox)
+        logger.info("Outbox record created for payment %s", payment.id)
 
         return payment

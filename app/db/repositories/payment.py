@@ -3,6 +3,7 @@
 CRUD-операции: создание, поиск по id и idempotency_key.
 """
 
+import logging
 from datetime import datetime
 from uuid import UUID
 
@@ -10,6 +11,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import PaymentModel, PaymentStatus
+
+logger = logging.getLogger(__name__)
 
 
 class PaymentRepository:
@@ -51,4 +54,5 @@ class PaymentRepository:
             if processed_at is not None:
                 payment.processed_at = processed_at
             await self.session.flush()
+            logger.info("Payment status updated, id=%s, status=%s", payment_id, status)
         return payment

@@ -21,7 +21,7 @@ def upgrade() -> None:
         sa.Column("amount", postgresql.NUMERIC(precision=10, scale=2), nullable=False),
         sa.Column("currency", sa.Enum("RUB", "USD", "EUR", name="currency", create_type=True), nullable=False),
         sa.Column("description", sa.Text(), nullable=False),
-        sa.Column("metadata", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+        sa.Column("extra_data", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column("status", sa.Enum("pending", "succeeded", "failed", name="paymentstatus", create_type=True), nullable=False, server_default="pending"),
         sa.Column("idempotency_key", sa.String(255), nullable=False),
         sa.Column("webhook_url", sa.Text(), nullable=False),

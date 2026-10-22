@@ -3,28 +3,32 @@ version: "3.9"
 services:
   postgres:
     image: postgres:16-alpine
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: payment_user
-      POSTGRES_PASSWORD: payment_pass
-      POSTGRES_DB: payment_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U payment_user -d payment_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
+    env_file:
+      - .env
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MGMT_PORT:-15672}:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
@@ -38,17 +42,12 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
+    env_file:
+      - .env
     environment:
-      API_KEY: super-secret-api-key
-      DATABASE_URL: postgresql+asyncpg://payment_user:payment_pass@postgres:5432/payment_db
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
-      DEBUG: "true"
-      LOG_LEVEL: INFO
-      WEBHOOK_TIMEOUT: 10
-      WEBHOOK_MAX_RETRIES: 3
-      OUTBOX_POLL_INTERVAL: 2.0
-      OUTBOX_BATCH_SIZE: 50
+      POSTGRES_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
     depends_on:
       postgres:
         condition: service_healthy
@@ -63,16 +62,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    env_file:
+      - .env
     environment:
-      API_KEY: super-secret-api-key
-      DATABASE_URL: postgresql+asyncpg://payment_user:payment_pass@postgres:5432/payment_db
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
-      DEBUG: "true"
-      LOG_LEVEL: INFO
-      WEBHOOK_TIMEOUT: 10
-      WEBHOOK_MAX_RETRIES: 3
-      OUTBOX_POLL_INTERVAL: 2.0
-      OUTBOX_BATCH_SIZE: 50
+      POSTGRES_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
     depends_on:
       postgres:
         condition: service_healthy
@@ -87,16 +81,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    env_file:
+      - .env
     environment:
-      API_KEY: super-secret-api-key
-      DATABASE_URL: postgresql+asyncpg://payment_user:payment_pass@postgres:5432/payment_db
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
-      DEBUG: "true"
-      LOG_LEVEL: INFO
-      WEBHOOK_TIMEOUT: 10
-      WEBHOOK_MAX_RETRIES: 3
-      OUTBOX_POLL_INTERVAL: 2.0
-      OUTBOX_BATCH_SIZE: 50
+      POSTGRES_HOST: postgres
+      RABBITMQ_HOST: rabbitmq
     depends_on:
       postgres:
         condition: service_healthy

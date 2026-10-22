@@ -46,12 +46,16 @@ async def handle_payment_message(message: dict):
     webhook_url = message.get("webhook_url", "")
     payload = message.get("payload", {})
 
-    logger.info("Processing payment %s", payment_id)
+    logger.info("Processing payment %s, webhook_url=%s", payment_id, webhook_url)
 
     # Эмуляция обработки
     await asyncio.sleep(random.uniform(2, 5))
     success = random.random() < 0.9
     new_status = PaymentStatus.SUCCEEDED if success else PaymentStatus.FAILED
+    logger.info(
+        "Emulated processing result for payment %s: %s",
+        payment_id, new_status.value,
+    )
 
     # Обновляем статус в БД
     async with async_session_factory() as session:
@@ -68,8 +72,7 @@ async def handle_payment_message(message: dict):
             await session.rollback()
             return
 
-        # Отправляем webhook ДО обновления статуса — если webhook упадёт,
-        # статус останется pending и сообщение можно будет обработать повторно.
+
         webhook_payload = {
             "event": "payment.processed",
             "payment_id": str(payment.id),

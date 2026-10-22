@@ -3,10 +3,8 @@ FastAPI приложение с lifespan-менеджером.
 Собирает все роуты, настраивает middleware и lifecycle.
 """
 
-import asyncio
 import logging
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from alembic.config import Config
 from alembic.command import upgrade
@@ -15,22 +13,24 @@ from fastapi import FastAPI
 from app.api.v1 import payments
 from app.core.config import settings
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+log_level = getattr(logging, str(settings.LOG_LEVEL).upper(), logging.INFO)
 
-logging.basicConfig(
-    level=getattr(logging, settings.LOG_LEVEL),
-    format="%(asctime)s %(name)s %(levelname)s %(message)s",
+# Настраиваем форматтер
+formatter = logging.Formatter(
+    "%(asctime)s %(name)s %(levelname)s [%(filename)s:%(lineno)d] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
+
 logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Управление lifecycle приложения."""
-    # Startup: применяем миграции Alembic (в потоке, чтобы не блокировать event loop)
+    # Startup: применяем миграции Alembic
     logger.info("Running Alembic migrations...")
-    alembic_cfg = Config(str(PROJECT_ROOT / "alembic.ini"))
-    await asyncio.to_thread(upgrade, alembic_cfg, "head")
+    alembic_cfg = Config("alembic.ini")
+    upgrade(alembic_cfg, "head")
     logger.info("Migrations applied successfully")
 
     yield
@@ -46,7 +46,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Регистрируем роуты
 app.include_router(payments.router, prefix=settings.API_PREFIX)
 
 

@@ -15,7 +15,7 @@ class PaymentCreate(BaseModel):
     amount: Decimal = Field(..., gt=0, description="Сумма платежа")
     currency: str = Field(..., pattern="^(RUB|USD|EUR)$", description="Валюта")
     description: str = Field(..., min_length=1, max_length=500, description="Описание платежа")
-    metadata: dict | None = Field(default=None, description="Дополнительные метаданные")
+    extra_data: dict | None = Field(default=None, description="Дополнительные данные")
     webhook_url: str = Field(..., description="URL для webhook-уведомления")
 
 
@@ -28,7 +28,7 @@ class PaymentResponse(BaseModel):
     amount: Decimal
     currency: str
     description: str
-    metadata: dict | None
+    extra_data: dict | None
     status: str
     idempotency_key: str
     webhook_url: str
